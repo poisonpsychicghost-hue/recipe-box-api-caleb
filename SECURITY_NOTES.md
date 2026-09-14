@@ -1,1 +1,3 @@
 - PATCH /recipes/1 ——anonymous requester changed the recipe title and got 200 ok; subsequent GET /recipes/1 showed the modified title. 
+- DELETE /recipes/2 ——anonymous requester deleted recipe [id = 2] and got 204 OK; subsequent GET /recipes/2 got a 404 and GET /recipes had id's [1, 3] confirming DELETE.
+- GET /recipes + /recipes/1 ——anonymous requester accessed full JSON list of all recipes, then targetted recipe [id = 1] accessing full recipe data; Both GETS got a 200 OK without identity or auth. 
