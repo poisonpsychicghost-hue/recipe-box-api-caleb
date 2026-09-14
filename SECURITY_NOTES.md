@@ -1,0 +1,1 @@
+- PATCH /recipes/1 ——anonymous requester changed the recipe title and got 200 ok; subsequent GET /recipes/1 showed the modified title. 
