@@ -8,7 +8,7 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 import sqlite3
 
 from flask import Flask, g, jsonify, request
-from security import hash_password, verify_password
+from security import generate_password_hash, check_password_hash
 
 DATABASE = "recipes.db"
 
@@ -128,6 +128,74 @@ def delete_recipe(recipe_id):
         return jsonify({"error": "recipe not found"}), 404
     return "", 204
 
+
+@app.post("/users")
+def create_user():
+    if not request.is_json:
+        return jsonify({"error": "Bad Request: Request Should Be in JSON"}), 400
+    data = request.get_json()
+    WL = ["username", "email", "password"]
+    if not data:
+        return jsonify({"error": "Bad Request: Request Empty"}), 400
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not isinstance(username, str) or username.strip() == "":
+        return jsonify({"error": "Bad Request: username required"}), 400
+    if not isinstance(email, str) or email.strip() == "":
+        return jsonify({"error": "Bad Request: email required"}), 400
+    if not isinstance(password, str) or password.strip() == "":
+        return jsonify({"error": "Bad Request: password required"}), 400
+
+    password_hash = generate_password_hash(password)
+
+    db = get_db()
+    try:
+        cur = db.execute(
+            """
+            INSERT INTO users (username, email, password_hash)
+            VALUES (?, ?, ?)
+            """, (username, email, password_hash))
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        msg = str(e)
+        if "users.username" in msg:
+            return jsonify({"error": "username already taken"}), 409
+        if "users.email" in msg:
+            return jsonify({"error": "email already taken"}), 409
+        return jsonify({"error": "account conflict"}), 409
+
+    user_id = cur.lastrowid
+    return_body = {"message": "User Creation Successful", "username": username, "email": email, "id": user_id}
+
+    return jsonify(return_body), 201
+
+
+@app.post("/login")
+def validate_login():
+    if not request.is_json:
+        return {"error": "Bad Request: Request must be JSON"}, 400
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    if not isinstance(username, str) or not isinstance(password, str):
+        return {"error": "username and password are required"}, 400
+
+    db = get_db()
+    row = db.execute("""
+        SELECT id, username, password_hash FROM users WHERE username = ?
+    """, (username,)).fetchone()
+
+
+    if row is None or not check_password_hash(row["password_hash"], password):
+        return {"error": "Invalid credentials"}, 401
+
+
+    return {
+        "id": row["id"],
+        "username": row["username"],
+    }, 200
 
 if __name__ == "__main__":
     app.run(debug=True)
