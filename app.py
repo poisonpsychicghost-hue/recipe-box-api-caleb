@@ -192,10 +192,10 @@ def validate_login():
         return {"error": "Invalid credentials"}, 401
 
 
-    return {
+    return jsonify({
         "id": row["id"],
         "username": row["username"],
-    }, 200
+    }), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
