@@ -9,11 +9,16 @@ import sqlite3
 
 from flask import Flask, g, jsonify, request
 from security import generate_password_hash, check_password_hash
+import os
+from dotenv import load_dotenv
+import jwt
+import datetime
 
 DATABASE = "recipes.db"
 
 app = Flask(__name__)
-
+load_dotenv()
+app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
 
 def get_db():
     if "db" not in g:
@@ -191,10 +196,22 @@ def validate_login():
     if row is None or not check_password_hash(row["password_hash"], password):
         return {"error": "Invalid credentials"}, 401
 
+    payload = {
+        "id": row["id"],
+        "username": row["username"],
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+    }
+
+    token = jwt.encode(
+        payload,
+        app.config["JWT_SECRET"],
+        algorithm="HS256"
+    )
 
     return jsonify({
         "id": row["id"],
         "username": row["username"],
+        "token": token
     }), 200
 
 if __name__ == "__main__":
