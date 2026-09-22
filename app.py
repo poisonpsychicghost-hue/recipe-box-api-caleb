@@ -20,6 +20,7 @@ app = Flask(__name__)
 load_dotenv()
 app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
 
+
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
@@ -71,6 +72,20 @@ def create_recipe():
     data = request.get_json(silent=True)
     if not data or not data.get("title") or not data.get("ingredients"):
         return jsonify({"error": "title and ingredients are required"}), 400
+
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = None
+
+    token = auth_header[len("Bearer "):].strip()
+    try:
+        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
+        user_id = claims.get("sub")
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token Has Expired. Please Login."}), 401
+    except jwt.InvalidTokenError as e:
+        return jsonify({"error": "Unauthorized"}), 401
     db = get_db()
     try:
         cur = db.execute(
@@ -97,6 +112,25 @@ def update_recipe(recipe_id):
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "a JSON body is required"}), 400
+    
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = None
+    
+    token = auth_header[len("Bearer "):].strip()
+    try:
+        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
+        print("Decoded Claims:", claims)
+        user_id = claims.get("sub")
+        print("Authenticated User ID:", user_id)
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token Has Expired. Please Login."}), 401
+    except jwt.InvalidTokenError as e:
+        print("Error Type: ", type(e).__name__)
+        print("Error Message:", str(e))
+        return jsonify({"error": "Unauthorized"}), 401
+    
     fields, values = [], []
     for column in ("title", "ingredients", "instructions"):
         if column in data:
@@ -126,6 +160,23 @@ def update_recipe(recipe_id):
 
 @app.delete("/recipes/<int:recipe_id>")
 def delete_recipe(recipe_id):
+    if not request.is_json:
+        return jsonify({"error": "Bad Request: request must be valid JSON"}), 400
+    
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = None
+    
+    token = auth_header[len("Bearer "):].strip()
+    try:
+        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
+        user_id = claims.get("sub")
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token Has Expired. Please Login."}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Unauthorized"}), 401
+
     db = get_db()
     cur = db.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
     db.commit()
@@ -197,9 +248,9 @@ def validate_login():
         return {"error": "Invalid credentials"}, 401
 
     payload = {
-        "id": row["id"],
+        "sub": str(row["id"]),
         "username": row["username"],
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+       "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
     }
 
     token = jwt.encode(
