@@ -43,6 +43,7 @@ def recipe_to_dict(row):
         "ingredients": row["ingredients"],
         "instructions": row["instructions"],
         "is_public": bool(row["is_public"]),
+        "owner_id": row["owner_id"]
     }
 
 
@@ -53,17 +54,50 @@ def hello():
 
 @app.get("/recipes")
 def list_recipes():
-    rows = get_db().execute("SELECT * FROM recipes ORDER BY id").fetchall()
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = None
+            
+    token = auth_header[len("Bearer "):].strip()
+    
+    try:
+        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
+        user_id = claims.get("sub")
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token Has Expired. Please Login."}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    rows = get_db().execute("SELECT * FROM recipes WHERE is_public = 1 OR owner_id = ? ORDER BY id", (user_id,)).fetchall()
     return jsonify([recipe_to_dict(r) for r in rows])
 
 
 @app.get("/recipes/<int:recipe_id>")
 def get_recipe(recipe_id):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+    token = None
+        
+    token = auth_header[len("Bearer "):].strip()
+
+    try:
+        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
+        user_id = claims.get("sub")
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token Has Expired. Please Login."}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Unauthorized"}), 401
+
     row = get_db().execute(
         "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
     ).fetchone()
     if row is None:
         return jsonify({"error": "recipe not found"}), 404
+    if row["is_public"] == 0 and str(user_id) != str(row["owner_id"]):
+        return jsonify({"error": "Forbidden"}), 403
+        
     return jsonify(recipe_to_dict(row))
 
 
@@ -89,13 +123,14 @@ def create_recipe():
     db = get_db()
     try:
         cur = db.execute(
-            "INSERT INTO recipes (title, ingredients, instructions, is_public)"
-            " VALUES (?, ?, ?, ?)",
+            "INSERT INTO recipes (title, ingredients, instructions, is_public, owner_id)"
+            " VALUES (?, ?, ?, ?, ?)",
             (
                 data["title"],
                 data["ingredients"],
                 data.get("instructions", ""),
                 1 if data.get("is_public", True) else 0,
+                user_id,
             ),
         )
         db.commit()
@@ -124,6 +159,14 @@ def update_recipe(recipe_id):
         print("Decoded Claims:", claims)
         user_id = claims.get("sub")
         print("Authenticated User ID:", user_id)
+        db = get_db()
+        recipe = db.execute(
+            "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
+        ).fetchone()
+        if recipe is None:
+            return jsonify({"error": "Recipe Not Found"}), 404
+        if str(recipe["owner_id"]) != str(user_id):
+            return jsonify({"error": "Forbidden"}), 403
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token Has Expired. Please Login."}), 401
     except jwt.InvalidTokenError as e:
@@ -160,9 +203,7 @@ def update_recipe(recipe_id):
 
 @app.delete("/recipes/<int:recipe_id>")
 def delete_recipe(recipe_id):
-    if not request.is_json:
-        return jsonify({"error": "Bad Request: request must be valid JSON"}), 400
-    
+
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify({"error": "Unauthorized"}), 401
@@ -172,6 +213,14 @@ def delete_recipe(recipe_id):
     try:
         claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
         user_id = claims.get("sub")
+        db = get_db()
+        recipe = db.execute(
+            "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
+        ).fetchone()
+        if recipe is None:
+            return jsonify({"error": "Recipe Not Found"}), 404
+        if str(recipe["owner_id"]) != str(user_id):
+            return jsonify({"error": "Forbidden"}), 403
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token Has Expired. Please Login."}), 401
     except jwt.InvalidTokenError:
