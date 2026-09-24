@@ -158,6 +158,7 @@ def update_recipe(recipe_id):
         claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
         print("Decoded Claims:", claims)
         user_id = claims.get("sub")
+        role = claims.get("role")
         print("Authenticated User ID:", user_id)
         db = get_db()
         recipe = db.execute(
@@ -165,7 +166,9 @@ def update_recipe(recipe_id):
         ).fetchone()
         if recipe is None:
             return jsonify({"error": "Recipe Not Found"}), 404
-        if str(recipe["owner_id"]) != str(user_id):
+        is_owner = str(recipe["owner_id"]) == str(user_id)
+        is_admin = role == "admin"
+        if not (is_owner or is_admin):
             return jsonify({"error": "Forbidden"}), 403
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token Has Expired. Please Login."}), 401
@@ -213,13 +216,16 @@ def delete_recipe(recipe_id):
     try:
         claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
         user_id = claims.get("sub")
+        role = claims.get("role")
         db = get_db()
         recipe = db.execute(
             "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
         ).fetchone()
         if recipe is None:
             return jsonify({"error": "Recipe Not Found"}), 404
-        if str(recipe["owner_id"]) != str(user_id):
+        is_owner = str(recipe["owner_id"]) == str(user_id)
+        is_admin = role == "admin"
+        if not (is_owner or is_admin):
             return jsonify({"error": "Forbidden"}), 403
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token Has Expired. Please Login."}), 401
@@ -289,7 +295,7 @@ def validate_login():
 
     db = get_db()
     row = db.execute("""
-        SELECT id, username, password_hash FROM users WHERE username = ?
+        SELECT id, username, password_hash, role FROM users WHERE username = ?
     """, (username,)).fetchone()
 
 
@@ -299,6 +305,7 @@ def validate_login():
     payload = {
         "sub": str(row["id"]),
         "username": row["username"],
+        "role": row["role"],
        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
     }
 
