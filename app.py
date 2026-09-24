@@ -6,7 +6,7 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 """
 
 import sqlite3
-
+from functools import wraps
 from flask import Flask, g, jsonify, request
 from security import generate_password_hash, check_password_hash
 import os
@@ -47,53 +47,54 @@ def recipe_to_dict(row):
     }
 
 
+def require_token(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        token = auth_header[len("Bearer "):].strip()
+
+        try:
+            claims = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            g.user_id = claims.get("sub")
+            g.role = claims.get("role")
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token Has Expired. Please Log In."}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        return f(*args, **kwargs)
+    return wrapper
+
+
 @app.get("/")
 def hello():
     return jsonify({"message": "Recipe Box API", "recipes": "/recipes"})
 
 
 @app.get("/recipes")
+@require_token
 def list_recipes():
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
-    token = None
-            
-    token = auth_header[len("Bearer "):].strip()
-    
-    try:
-        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
-        user_id = claims.get("sub")
-        role = claims.get("role")
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token Has Expired. Please Login."}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Unauthorized"}), 401
     db = get_db()
+    user_id = g.user_id
+    role = g.role
     if role == "guest":
         rows = db.execute("SELECT * FROM recipes WHERE is_public = 1")
+    if role == "admin":
+        rows = db.execute("SELECT * FROM recipes")
     else:
-        rows = db().execute("SELECT * FROM recipes WHERE is_public = 1 OR owner_id = ? ORDER BY id", (user_id,)).fetchall()
+        rows = db.execute("SELECT * FROM recipes WHERE is_public = 1 OR owner_id = ? ORDER BY id", (user_id,)).fetchall()
     return jsonify([recipe_to_dict(r) for r in rows])
 
 
 @app.get("/recipes/<int:recipe_id>")
+@require_token
 def get_recipe(recipe_id):
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
-    token = None
-        
-    token = auth_header[len("Bearer "):].strip()
-
-    try:
-        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
-        user_id = claims.get("sub")
-        role = claims.get("role")
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token Has Expired. Please Login."}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Unauthorized"}), 401
+    user_id = g.user_id
+    role = g.role
     db = get_db()
     row = db.execute(
         "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
@@ -102,6 +103,8 @@ def get_recipe(recipe_id):
         return jsonify({"error": "recipe not found"}), 404
     if role == "guest" and row["is_public"] == 0:
         return jsonify({"error": "Forbidden"}), 403
+    if role == "admin":
+        return jsonify(recipe_to_dict(row))
     if row["is_public"] == 0 and str(user_id) != str(row["owner_id"]):
         return jsonify({"error": "Forbidden"}), 403
    
@@ -110,27 +113,16 @@ def get_recipe(recipe_id):
 
 
 @app.post("/recipes")
+@require_token
 def create_recipe():
     data = request.get_json(silent=True)
     if not data or not data.get("title") or not data.get("ingredients"):
         return jsonify({"error": "title and ingredients are required"}), 400
 
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
-    token = None
-
-    token = auth_header[len("Bearer "):].strip()
-    try:
-        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
-        user_id = claims.get("sub")
-        role = claims.get("role")
-        if role == "guest":
-            return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token Has Expired. Please Login."}), 401
-    except jwt.InvalidTokenError as e:
-        return jsonify({"error": "Unauthorized"}), 401
+    user_id = g.user_id
+    role = g.role
+    if role == "guest":
+        return jsonify({"error": "Guests Allowed Read-Only Access"})
     db = get_db()
     try:
         cur = db.execute(
@@ -154,40 +146,27 @@ def create_recipe():
 
 
 @app.patch("/recipes/<int:recipe_id>")
+@require_token
 def update_recipe(recipe_id):
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "a JSON body is required"}), 400
     
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
-    token = None
-    
-    token = auth_header[len("Bearer "):].strip()
-    try:
-        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
-        print("Decoded Claims:", claims)
-        user_id = claims.get("sub")
-        role = claims.get("role")
-        if role == "guest":
-            return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
-        db = get_db()
-        recipe = db.execute(
+    user_id = g.user_id
+    role = g.role
+    if role == "guest":
+        return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
+    db = get_db()
+    recipe = db.execute(
             "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
         ).fetchone()
-        if recipe is None:
+    if recipe is None:
             return jsonify({"error": "Recipe Not Found"}), 404
-        is_owner = str(recipe["owner_id"]) == str(user_id)
-        is_admin = role == "admin"
-        if not (is_owner or is_admin):
-            return jsonify({"error": "Forbidden"}), 403
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token Has Expired. Please Login."}), 401
-    except jwt.InvalidTokenError as e:
-        print("Error Type: ", type(e).__name__)
-        print("Error Message:", str(e))
-        return jsonify({"error": "Unauthorized"}), 401
+    is_owner = str(recipe["owner_id"]) == str(user_id)
+    is_admin = role == "admin"
+    if not (is_owner or is_admin):
+        return jsonify({"error": "Forbidden"}), 403
+
     
     fields, values = [], []
     for column in ("title", "ingredients", "instructions"):
@@ -200,7 +179,6 @@ def update_recipe(recipe_id):
     if not fields:
         return jsonify({"error": "nothing to update"}), 400
     values.append(recipe_id)
-    db = get_db()
     try:
         cur = db.execute(
             f"UPDATE recipes SET {', '.join(fields)} WHERE id = ?", values
@@ -217,36 +195,23 @@ def update_recipe(recipe_id):
 
 
 @app.delete("/recipes/<int:recipe_id>")
+@require_token
 def delete_recipe(recipe_id):
 
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized"}), 401
-    token = None
-    
-    token = auth_header[len("Bearer "):].strip()
-    try:
-        claims = jwt.decode(token, app.config['JWT_SECRET'], algorithms=["HS256"])
-        user_id = claims.get("sub")
-        role = claims.get("role")
-        db = get_db()
-        if role == "guest":
-            return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
-        recipe = db.execute(
-            "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-        ).fetchone()
-        if recipe is None:
-            return jsonify({"error": "Recipe Not Found"}), 404
-        is_owner = str(recipe["owner_id"]) == str(user_id)
-        is_admin = role == "admin"
-        if not (is_owner or is_admin):
-            return jsonify({"error": "Forbidden"}), 403
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token Has Expired. Please Login."}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Unauthorized"}), 401
-
+    user_id = g.user_id
+    role = g.role
     db = get_db()
+    if role == "guest":
+        return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
+    recipe = db.execute(
+        "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
+        ).fetchone()
+    if recipe is None:
+        return jsonify({"error": "Recipe Not Found"}), 404
+    is_owner = str(recipe["owner_id"]) == str(user_id)
+    is_admin = role == "admin"
+    if not (is_owner or is_admin):
+        return jsonify({"error": "Forbidden"}), 403
     cur = db.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
     db.commit()
     if cur.rowcount == 0:
