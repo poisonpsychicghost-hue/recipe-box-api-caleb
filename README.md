@@ -1,9 +1,72 @@
-# Recipe Box API
+# recipe-box-api – Backend
 
-A small, working Flask + SQLite API for keeping recipes. Full CRUD, clean
-status codes - and **no authentication at all**. Anyone who can reach it can
-read, change, or delete anything. In BE104 you fix that: real users, hashed
-passwords, JSON Web Tokens, ownership rules, and middleware.
+A backend service for storing and sharing recipes with support for both public and private entries.
+
+Built with Flask, SQLite, and JWT-based auth to explore secure access to personal recipe data.
+
+---
+
+## Project Purpose
+
+- Provide a simple online repository for users to store their recipes.
+- Support both public recipes and private “secret” recipes.
+- Expose a clear API for future frontend or third‑party integrations.
+- Practice secure patterns around auth, data access, and role-based behavior.
+
+---
+
+## Tech Stack
+
+- **Language:** Python
+- **Framework:** Flask
+- **Database:** SQLite3
+- **Auth/Security:** JSON Web Tokens (JWT), password hashing with Werkzeug
+- **Other:** (fill in if you use Blueprints, Marshmallow, etc.)
+
+---
+
+## Setup Instructions
+
+1. **Clone and install dependencies**
+
+   ```bash
+   git clone <repo-url>
+   cd recipe-box-api
+   python -m venv .venv
+   source .venv/bin/activate      # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+2. **Configure environment**
+
+   Create a `.env` file (or configure env vars) with values such as:
+
+   ```env
+   DATABASE_URL=sqlite:///recipes.db
+   SECRET_KEY=your-secret-key
+   JWT_SECRET_KEY=your-jwt-secret
+   ```
+
+3. **Initialize the database**
+
+   ```bash
+   python init_db.py   # or whatever script/Flask CLI command you use
+   ```
+
+4. **(Optional) Seed demo data**
+
+   ```bash
+   python seed_demo.py
+   ```
+
+---
+
+## Running the Backend
+
+```bash
+flask run
+# or
+python app.py
 
 ## Run it
 
