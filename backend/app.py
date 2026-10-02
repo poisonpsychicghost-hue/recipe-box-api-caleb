@@ -8,7 +8,7 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 import sqlite3
 from functools import wraps
 from flask import Flask, g, jsonify, request
-from security import generate_password_hash, check_password_hash
+from backend.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 import jwt
