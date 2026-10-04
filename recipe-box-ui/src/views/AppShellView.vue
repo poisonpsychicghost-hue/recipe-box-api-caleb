@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TopNav from '@/components/TopNav.vue'
+import SearchView from './SearchView.vue'
+import AddRecipeView from './AddRecipeView.vue'
+import ListRecipesView from './ListRecipesView.vue'
+import SettingsView from './SettingsView.vue'
+import AdminView from './AdminView.vue'
+
 type TabKey = 'search' | 'add' | 'list' | 'settings' | 'admin'
 
 const activeTab = ref<TabKey>('search')
@@ -16,12 +22,11 @@ function handleTabChange(tab: TabKey) {
     @change-tab="handleTabChange" />
 
     <section>
-        <h1 v-if="activeTab === 'search'">Search View(Tab)</h1>
-        <h1 v-else-if="activeTab === 'add'">Add Recipe (Tab)</h1>
-        <h1 v-else-if="activeTab === 'list'">List Recipes (Tab)</h1>
-        <h1 v-else-if="activeTab === 'settings'">Settings (Tab)</h1>
-        <h1 v-else-if="activeTab === 'admin'">Admin View (Tab)</h1>
-
+        <SearchView v-if="activeTab === 'search'" />
+        <AddRecipeView v-else-if="activeTab === 'add'" />
+        <ListRecipesView v-else-if="activeTab === 'list'" />
+        <SettingsView v-else-if="activeTab === 'settings'" />
+        <AdminView v-else-if="activeTab === 'admin'" />
     </section>
 
 </template>
