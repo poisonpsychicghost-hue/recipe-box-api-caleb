@@ -6,6 +6,8 @@ import AddRecipeView from './AddRecipeView.vue'
 import ListRecipesView from './ListRecipesView.vue'
 import SettingsView from './SettingsView.vue'
 import AdminView from './AdminView.vue'
+import NotificationCenter from '@/components/NotificationCenter.vue'
+import BaseModal from '@/components/BaseModal.vue'
 
 type TabKey = 'search' | 'add' | 'list' | 'settings' | 'admin'
 
@@ -27,6 +29,11 @@ function handleTabChange(tab: TabKey) {
         <ListRecipesView v-else-if="activeTab === 'list'" />
         <SettingsView v-else-if="activeTab === 'settings'" />
         <AdminView v-else-if="activeTab === 'admin'" />
+    </section>
+
+    <section>
+        <NotificationCenter />
+        <BaseModal />
     </section>
 
 </template>
