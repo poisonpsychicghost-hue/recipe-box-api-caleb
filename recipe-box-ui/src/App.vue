@@ -6,7 +6,7 @@ import FooterBar from './components/FooterBar.vue';
 </script>
 
 <template>
-  <TopNav />
+
   <main>
   <router-view />
   </main>
