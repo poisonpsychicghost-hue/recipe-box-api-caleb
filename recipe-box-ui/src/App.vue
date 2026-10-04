@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import TopNav from './components/TopNav.vue'
+import FooterBar from './components/FooterBar.vue';
 
 
 </script>
 
 <template>
-  <header></header>
+  <TopNav />
   <main>
   <router-view />
   </main>
-  <footer></footer>
+  <FooterBar />
+
 </template>
 
 <style scoped></style>
