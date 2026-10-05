@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+
 import TopNav from '@/components/TopNav.vue'
+import NotificationCenter from '@/components/NotificationCenter.vue'
+import BaseModal from '@/components/BaseModal.vue'
+
 import SearchView from './SearchView.vue'
 import AddRecipeView from './AddRecipeView.vue'
 import ListRecipesView from './ListRecipesView.vue'
 import SettingsView from './SettingsView.vue'
 import AdminView from './AdminView.vue'
-import NotificationCenter from '@/components/NotificationCenter.vue'
-import BaseModal from '@/components/BaseModal.vue'
+
 
 type TabKey = 'search' | 'add' | 'list' | 'settings' | 'admin'
 

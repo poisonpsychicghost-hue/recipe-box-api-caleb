@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import TopNav from './components/TopNav.vue'
-import FooterBar from './components/FooterBar.vue';
-
+import FooterBar from './components/FooterBar.vue'
 
 </script>
 
