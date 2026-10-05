@@ -274,7 +274,7 @@ def validate_login():
 
     db = get_db()
     row = db.execute("""
-        SELECT id, username, password_hash, role FROM users WHERE username = ?
+        SELECT id, username, password_hash, role, email FROM users WHERE username = ?
     """, (username,)).fetchone()
 
 
@@ -286,6 +286,7 @@ def validate_login():
         "username": row["username"],
         "role": row["role"],
        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
+       "email": row["email"]
     }
 
     token = jwt.encode(
@@ -297,6 +298,8 @@ def validate_login():
     return jsonify({
         "id": row["id"],
         "username": row["username"],
+        "role": row["role"],
+        "email": row["email"],
         "token": token
     }), 200
 
