@@ -8,18 +8,24 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 import sqlite3
 from functools import wraps
 from flask import Flask, g, jsonify, request
+from flask_cors import CORS
 from security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 import jwt
 import datetime
 
-DATABASE = "backend/recipes.db"
+DATABASE = "recipes.db"
 
 app = Flask(__name__)
 load_dotenv()
 app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
 
+CORS(
+    app,
+    resources={r"/*": {"prigins": "http:127.0.0.1:5173"}},
+    supports_credentials=False
+)
 
 def get_db():
     if "db" not in g:
@@ -267,15 +273,15 @@ def validate_login():
     if not request.is_json:
         return {"error": "Bad Request: Request must be JSON"}, 400
     data = request.get_json()
-    username = data.get("username")
+    email = data.get("email")
     password = data.get("password")
-    if not isinstance(username, str) or not isinstance(password, str):
-        return {"error": "username and password are required"}, 400
+    if not isinstance(email, str) or not isinstance(password, str):
+        return {"error": "email and password are required"}, 400
 
     db = get_db()
     row = db.execute("""
-        SELECT id, username, password_hash, role, email FROM users WHERE username = ?
-    """, (username,)).fetchone()
+        SELECT id, username, password_hash, role, email FROM users WHERE email = ?
+    """, (email,)).fetchone()
 
 
     if row is None or not check_password_hash(row["password_hash"], password):
