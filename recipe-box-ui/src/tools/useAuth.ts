@@ -40,21 +40,18 @@ export function useAuth() {
             message = errBody.message;
           }
         } catch {
-          // ignore JSON parse errors, keep default message
+          // ignore JSON parse error
         }
 
         authStatus.value = 'error';
         authError.value = message;
-
         showToast({ type: 'error', message });
         return;
       }
 
       const data = await response.json();
 
-      // TODO: adjust this mapping to match your real backend response
-      // Example 1: { token, id, email, role, username }
-      const token = data.token;
+      const token: string | undefined = data.token;
       const user: User = {
         id: data.id,
         email: data.email,
