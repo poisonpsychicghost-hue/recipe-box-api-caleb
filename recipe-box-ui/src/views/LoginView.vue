@@ -2,12 +2,17 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/tools/useAuth';
+import { useNotifications } from '@/tools/useNotifications';
+import RegisterModal from '@/components/RegisterModal.vue';
+import BaseModal from '@/components/BaseModal.vue';
 
 const email = ref('');
 const password = ref('');
+const showRegisterModal = ref(false);
 
 const router = useRouter();
 const { login, authStatus, authError } = useAuth();
+const { showToast } = useNotifications();
 
 const isSubmitting = computed(() => authStatus.value === 'authenticating');
 
@@ -23,7 +28,13 @@ async function handleSubmit(e: Event) {
     }
 }
     
+function openRegister() {
+    showRegisterModal.value = true;
+}
 
+function closeRegister() {
+    showRegisterModal.value = false;
+}
 
 </script>
 
@@ -48,10 +59,13 @@ async function handleSubmit(e: Event) {
                 {{ isSubmitting ? 'Logging in...' : 'Login' }}
              </button>
 
-             <button type="button">
+             <button type="button" @click="openRegister">
                 Register
              </button>
         </form>
-    </section>
 
+        <RegisterModal
+            v-if="showRegisterModal"
+            @close="closeRegister" />
+    </section>
 </template>
