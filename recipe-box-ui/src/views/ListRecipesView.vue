@@ -5,6 +5,7 @@ import RecipeCard from '@/components/RecipeCard.vue';
 import { useRecipes } from '@/tools/useRecipes';
 import { useAuth } from '@/tools/useAuth';
 
+
 const { recipes, loading, error, fetchRecipes } = useRecipes();
 const { currentUser } = useAuth();
 
@@ -78,4 +79,6 @@ function handleDelete(id: number) {
   </section>
 </template>
 
-
+<style>
+@import '../styles/base.css'
+</style>
