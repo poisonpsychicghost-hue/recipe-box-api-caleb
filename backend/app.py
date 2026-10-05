@@ -15,7 +15,9 @@ from dotenv import load_dotenv
 import jwt
 import datetime
 
-DATABASE = "recipes.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DATABASE = os.path.join(BASE_DIR, 'recipes.db')
 
 app = Flask(__name__)
 load_dotenv()
@@ -23,7 +25,7 @@ app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
 
 CORS(
     app,
-    resources={r"/*": {"prigins": "http:127.0.0.1:5173"}},
+    resources={r"/*": {"origins": "http://127.0.0.1:5173"}},
     supports_credentials=False
 )
 
@@ -43,15 +45,20 @@ def close_db(exception):
 
 
 def recipe_to_dict(row):
-    return {
+    result = {
         "id": row["id"],
         "title": row["title"],
         "ingredients": row["ingredients"],
         "instructions": row["instructions"],
         "is_public": bool(row["is_public"]),
-        "owner_id": row["owner_id"]
+        "owner_id": row["owner_id"],
     }
 
+    # safely include owner_username if it’s present in this query
+    if "owner_username" in row.keys():
+        result["owner_username"] = row["owner_username"]
+
+    return result
 
 def require_token(f):
     @wraps(f)
@@ -87,14 +94,51 @@ def list_recipes():
     db = get_db()
     user_id = g.user_id
     role = g.role
-    if role == "guest":
-        rows = db.execute("SELECT * FROM recipes WHERE is_public = 1")
-    if role == "admin":
-        rows = db.execute("SELECT * FROM recipes")
-    else:
-        rows = db.execute("SELECT * FROM recipes WHERE is_public = 1 OR owner_id = ? ORDER BY id", (user_id,)).fetchall()
-    return jsonify([recipe_to_dict(r) for r in rows])
 
+    base_query = """
+        SELECT
+            r.id,
+            r.title,
+            r.ingredients,
+            r.instructions,
+            r.is_public,
+            r.owner_id,
+            u.username AS owner_username
+        FROM recipes AS r
+        JOIN users AS u ON r.owner_id = u.id
+    """
+
+    params = ()
+    where_clauses = []
+
+    if role == "admin":
+        # admin sees everything
+        query = base_query
+    elif role == "guest":
+        # guest: only public recipes
+        where_clauses.append("r.is_public = 1")
+        query = base_query + " WHERE " + " AND ".join(where_clauses)
+    else:
+        # regular user: public recipes OR their own (even if private)
+        where_clauses.append("(r.is_public = 1 OR r.owner_id = ?)")
+        params = (user_id,)
+        query = base_query + " WHERE " + " AND ".join(where_clauses)
+
+    rows = db.execute(query, params).fetchall()
+
+    recipes = []
+    for row in rows:
+        recipes.append({
+            "id": row["id"],
+            "title": row["title"],
+            "ingredients": row["ingredients"],
+            "instructions": row["instructions"],
+            "is_public": bool(row["is_public"]),
+            "owner_id": row["owner_id"],
+            "owner_username": row["owner_username"],
+        })
+
+    return jsonify(recipes), 200
 
 @app.get("/recipes/<int:recipe_id>")
 @require_token
