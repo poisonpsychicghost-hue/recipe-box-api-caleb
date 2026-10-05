@@ -1,8 +1,11 @@
 import AppShellView from '@/views/AppShellView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import LoginView  from '../views/LoginView.vue'
+import { useAuth } from '@/tools/useAuth.ts'
+
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
@@ -11,16 +14,26 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: ()=> 
-        import('../views/LoginView.vue')
+      component: LoginView
     },
     {
       path: '/app',
       name: 'app-shell',
-      component: () => 
-        import('../views/AppShellView.vue')
+      component: AppShellView
     }
   ],
-})
+});
+
+router.beforeEach((to, from, next) => {
+  const { authToken } = useAuth();
+
+  const isProtected = to.path.startsWith('/app');
+
+  if (isProtected && !authToken.value) {
+    next(('/login'));
+  } else {
+    next();
+  }
+});
 
 export default router
