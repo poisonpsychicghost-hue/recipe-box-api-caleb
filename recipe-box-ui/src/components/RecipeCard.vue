@@ -4,7 +4,8 @@ const props = defineProps<{
     title: string;
     ingredients: string;
     instructions: string;
-    ownerName?: string;
+    owner_id?: number;
+    ownerName: string;
     isOwner: boolean;
     isAdmin: boolean;
 }>();
