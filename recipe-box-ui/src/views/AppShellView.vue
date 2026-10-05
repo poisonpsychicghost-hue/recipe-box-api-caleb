@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import TopNav from '@/components/TopNav.vue'
 import NotificationCenter from '@/components/NotificationCenter.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import { useAuth } from '@/tools/useAuth.ts'
 
 import SearchView from './SearchView.vue'
 import AddRecipeView from './AddRecipeView.vue'
@@ -12,9 +13,11 @@ import SettingsView from './SettingsView.vue'
 import AdminView from './AdminView.vue'
 
 
+
 type TabKey = 'search' | 'add' | 'list' | 'settings' | 'admin'
 
 const activeTab = ref<TabKey>('search')
+const auth = useAuth()
 
 function handleTabChange(tab: TabKey) {
     activeTab.value = tab
@@ -35,6 +38,7 @@ function handleTabChange(tab: TabKey) {
     </section>
 
     <section>
+        <button @click="auth.handleTokenExpired()">TEST EXPIRED</button>
         <NotificationCenter />
         <BaseModal />
     </section>
