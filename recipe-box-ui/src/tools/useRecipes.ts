@@ -1,6 +1,7 @@
 import { ref, readonly } from 'vue';
 import { useApiClient } from './useApiClient';
 
+
 export interface Recipe {
     id: number;
     title: string;
@@ -19,6 +20,7 @@ const error = ref<string | null>(null);
 
 export function useRecipes() {
     const { request } = useApiClient();
+
 
     async function fetchRecipes() {
         loading.value = true;
@@ -83,6 +85,27 @@ export function useRecipes() {
         return { ok: true };
     }
 
+    async function createRecipe(payload: {
+        title: string;
+        ingredients: string;
+        instructions: string;
+        is_public: boolean;
+    }) {
+        const result = await request<Recipe>('/recipes', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+
+        if (result.error || !result.data) {
+            return { ok: false, error: result.error ?? 'Failed to create recipe' };
+        }
+
+        recipes.value.push(result.data);
+
+
+        return { ok: true, recipe: result.data };
+    }
+
     return { 
         recipes: readonly(recipes),
         selectedRecipe: readonly(selectedRecipe),
@@ -92,5 +115,6 @@ export function useRecipes() {
         searchRecipes,
         updateRecipe,
         deleteRecipe, 
+        createRecipe,
     };
 }
