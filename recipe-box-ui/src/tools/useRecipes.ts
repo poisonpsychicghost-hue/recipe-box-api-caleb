@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue';
 import { useApiClient } from './useApiClient';
 
-interface Recipe {
+export interface Recipe {
     id: number;
     title: string;
     ingredients: string;
