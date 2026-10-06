@@ -1,3 +1,3 @@
 <template> 
-    <p> Sirius | Maestro College | Version 0.1 | 3/10/26 </p>
+    <p> Sirius | Maestro College | Version 0.9 | 06/10/2026 </p>
 </template>

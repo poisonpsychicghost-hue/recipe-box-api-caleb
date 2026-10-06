@@ -38,7 +38,6 @@ function handleTabChange(tab: TabKey) {
     </section>
 
     <section>
-        <button @click="auth.handleTokenExpired()">TEST EXPIRED</button>
         <NotificationCenter />
         <BaseModal />
     </section>
