@@ -6,7 +6,7 @@ import { useRecipes } from '@/tools/useRecipes';
 import { useAuth } from '@/tools/useAuth';
 import { useNotifications } from '@/tools/useNotifications';
 
-const { recipes, loading, error, fetchRecipes, updateRecipe } = useRecipes();
+const { recipes, loading, error, fetchRecipes, updateRecipe, deleteRecipes } = useRecipes();
 const { currentUser } = useAuth();
 const { showToast, showModal } = useNotifications();
 
@@ -92,7 +92,30 @@ function handleModify(id: number) {
 }
 
 function handleDelete(id: number) {
-    console.log('Delete called for', id)
+  const recipe = recipes.value.find((r) => r.id === id);
+  const title = recipe ? recipe.title : `#${id}`;
+
+  showModal({
+    type: 'confirm-delete',
+    title: 'Delete Recipe',
+    message: `Are you sure you want to delete ${title}? This cannot be undone..`,
+    async onConfirm() {
+      const result = await deleteRecipes(id);
+
+      if (!result.ok) {
+        showToast({
+          type: 'error',
+          message: result.error ?? 'Failed to delete recipe.',
+        });
+        return;
+      }
+
+      showToast({
+        type: 'success',
+        message: `Recipe ${title} deleted.`,
+      });
+    },
+  });
 }
 
 </script>

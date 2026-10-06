@@ -66,6 +66,23 @@ export function useRecipes() {
         return {ok: true, recipe: result.data};
     }
 
+    async function deleteRecipes(id: number) {
+        const result = await request<void>(`/recipes/${id}`, {
+            method: 'DELETE',
+        });
+
+        if (result.error) {
+            return { ok: false, error: result.error};
+        }
+
+        const idx = recipes.value.findIndex((r) => r.id === id);
+        if (idx !== -1) {
+            recipes.value.splice(idx, 1);
+        }
+
+        return { ok: true };
+    }
+
     return {
         recipes: readonly(recipes),
         selectedRecipe: readonly(selectedRecipe),
@@ -74,5 +91,6 @@ export function useRecipes() {
         fetchRecipes,
         searchRecipes,
         updateRecipe,
+        deleteRecipes,
     };
 }
