@@ -3,3 +3,28 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
 }
+
+html {
+  --font-scale: 1;
+}
+
+body {
+  font-size: calc(16px * var(--font-scale));
+}
+
+/* theme base classes */
+html.theme-light {
+  /* placeholders for now, real colors in Phase 4 */
+  background-color: #f7f3ec;
+  color: #0f2a24;
+}
+
+html.theme-dark {
+  background-color: #040908;
+  color: #f7f3ec;
+}
+
+/* dyslexic class */
+body.font-dyslexic {
+  font-family: "OpenDyslexic", "Atkinson Hyperlegible", system-ui, sans-serif;
+}
