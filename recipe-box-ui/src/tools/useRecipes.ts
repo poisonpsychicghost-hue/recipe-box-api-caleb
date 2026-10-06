@@ -66,7 +66,7 @@ export function useRecipes() {
         return {ok: true, recipe: result.data};
     }
 
-    async function deleteRecipes(id: number) {
+    async function deleteRecipe(id: number) {
         const result = await request<void>(`/recipes/${id}`, {
             method: 'DELETE',
         });
@@ -83,7 +83,7 @@ export function useRecipes() {
         return { ok: true };
     }
 
-    return {
+    return { 
         recipes: readonly(recipes),
         selectedRecipe: readonly(selectedRecipe),
         loading: readonly(loading),
@@ -91,6 +91,6 @@ export function useRecipes() {
         fetchRecipes,
         searchRecipes,
         updateRecipe,
-        deleteRecipes,
+        deleteRecipe, 
     };
 }

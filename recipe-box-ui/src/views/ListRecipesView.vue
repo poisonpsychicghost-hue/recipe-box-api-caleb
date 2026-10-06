@@ -6,7 +6,7 @@ import { useRecipes } from '@/tools/useRecipes';
 import { useAuth } from '@/tools/useAuth';
 import { useNotifications } from '@/tools/useNotifications';
 
-const { recipes, loading, error, fetchRecipes, updateRecipe, deleteRecipes } = useRecipes();
+const { recipes, loading, error, fetchRecipes, updateRecipe, deleteRecipe } = useRecipes();
 const { currentUser } = useAuth();
 const { showToast, showModal } = useNotifications();
 
@@ -100,7 +100,7 @@ function handleDelete(id: number) {
     title: 'Delete Recipe',
     message: `Are you sure you want to delete ${title}? This cannot be undone..`,
     async onConfirm() {
-      const result = await deleteRecipes(id);
+      const result = await deleteRecipe(id);
 
       if (!result.ok) {
         showToast({
