@@ -44,6 +44,28 @@ export function useRecipes() {
             r.title?.toLowerCase().includes(q)
         );
     }
+
+    async function updateRecipe(
+        id: number,
+        patch: Partial<Pick<Recipe, 'title' | 'ingredients' | 'instructions' | 'is_public'>>
+    ) {
+        const result = await request<Recipe>(`/recipes/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch),
+        });
+
+        if (result.error || !result.data) {
+            return { ok: false, error: result.error ?? 'Update Failed.' };
+        }
+
+        const idx = recipes.value.findIndex((r) => r.id === id);
+        if (idx !== -1) {
+            recipes.value[idx] = result.data;
+        }
+
+        return {ok: true, recipe: result.data};
+    }
+
     return {
         recipes: readonly(recipes),
         selectedRecipe: readonly(selectedRecipe),
@@ -51,5 +73,6 @@ export function useRecipes() {
         error: readonly(error),
         fetchRecipes,
         searchRecipes,
+        updateRecipe,
     };
 }
