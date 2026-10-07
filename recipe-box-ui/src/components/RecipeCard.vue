@@ -30,7 +30,7 @@ function handleDelete() {
     <article class="recipe-card">
         <!-- default logo / placeholder-->
          <div class="recipe-card__logo">
-            <span>RB</span>
+            <span>🐶srb</span>
          </div>
 
          <header class="recipe-card__header">

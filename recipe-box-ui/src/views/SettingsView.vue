@@ -18,7 +18,7 @@ const fontScaleInput = computed({
 </script>
 
 <template> 
-    <section class="setting-tab__container">
+    <section class="panel-card">
         <h1 class="settings-tab__label">Settings</h1>
 
         <div>

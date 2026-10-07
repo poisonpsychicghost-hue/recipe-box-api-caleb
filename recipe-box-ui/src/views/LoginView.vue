@@ -39,7 +39,7 @@ function closeRegister() {
 </script>
 
 <template> 
-    <section class="login-view__container">
+    <section class="panel-card">
         <h1 class="login-view__label">LOGIN</h1>
 
         <form class="login-form" @submit="handleSubmit">

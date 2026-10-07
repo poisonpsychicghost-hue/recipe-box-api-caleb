@@ -53,7 +53,7 @@ async function handleSubmit(e: Event) {
 </script>
 
 <template> 
-    <section class="add-recipe__container">
+    <section class="panel-card">
         <h1 class="add-recipe__label">Add Recipe</h1>
 
         <form class="add-recipe__form" @submit="handleSubmit">
