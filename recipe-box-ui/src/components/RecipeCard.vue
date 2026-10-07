@@ -34,7 +34,7 @@ function handleDelete() {
          </div>
 
          <header class="recipe-card__header">
-            <h2>{{ title }}</h2>
+            <h2 class="recipe-card__title">{{ title }}</h2>
          </header>
 
          <section class="recipe-card__body">

@@ -158,19 +158,19 @@ function handleDelete(id: number) {
 
         <form @submit="saveEdit">
           <div>
-            <label for="edit-title">Title</label>
-            <input id="edit-title" v-model="editTitle" />
+            <label class="modal__label" for="edit-title">Title</label>
+            <input class="modal__input" id="edit-title" v-model="editTitle" />
           </div>
           <div>
-            <label for="edit-ingredients">Ingredients</label>
-            <textarea id="edit-ingredients" v-model="editIngredients" />
+            <label class="modal__label" for="edit-ingredients">Ingredients</label>
+            <textarea class="modal__input" id="edit-ingredients" v-model="editIngredients" />
           </div>
           <div>
-            <label for="edit-instructions">Instructions</label>
-            <textarea id="edit-instructions" v-model="editInstructions" />
+            <label class="modal__label" for="edit-instructions">Instructions</label>
+            <textarea class="modal__input" id="edit-instructions" v-model="editInstructions" />
           </div>
           <div>
-            <label><input type="checkbox" v-model="editIsPublic" />Public</label>
+            <label class="modal__label"><input class="modal__input" type="checkbox" v-model="editIsPublic" />Public</label>
           </div>
 
           <p v-if="editError" style="color: red;">{{ editError }}</p>

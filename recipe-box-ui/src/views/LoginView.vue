@@ -39,17 +39,17 @@ function closeRegister() {
 </script>
 
 <template> 
-    <section>
-        <h1>LOGIN</h1>
+    <section class="login-view__container">
+        <h1 class="login-view__label">LOGIN</h1>
 
-        <form @submit="handleSubmit">
-            <div>
-                <label for="email">Email</label>
-                <input id="email" type="email"  v-model="email", autocomplete="email" />
+        <form class="login-form" @submit="handleSubmit">
+            <div class="login-form__email-box">
+                <label class="login-form__email-label" for="email">Email</label>
+                <input class="login-form__email-input" id="email" type="email"  v-model="email", autocomplete="email" />
             </div>
-            <div>
-                <label for="password">Password</label>
-                <input id="password" type="password" v-model="password" autocomplete="current-password" />
+            <div class="login-form__password-box">
+                <label class="login-form__password-label" for="password">Password</label>
+                <input class="login-form__password-input" id="password" type="password" v-model="password" autocomplete="current-password" />
             </div>
 
             <p v-if="authError" style="color: red;">

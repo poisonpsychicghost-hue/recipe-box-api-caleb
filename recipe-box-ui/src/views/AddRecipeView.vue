@@ -53,35 +53,35 @@ async function handleSubmit(e: Event) {
 </script>
 
 <template> 
-    <section>
-        <h1>Add Recipe</h1>
+    <section class="add-recipe__container">
+        <h1 class="add-recipe__label">Add Recipe</h1>
 
-        <form @submit="handleSubmit">
+        <form class="add-recipe__form" @submit="handleSubmit">
             <div>
-                <label for="title">
+                <label class="add-recipe-form__title" for="title">
                     Title <span>*</span>
                 </label>
-                <input id="title" v-model="title" />
+                <input class="add-recipe-form__title-input" id="title" v-model="title" />
             </div>
             
             <div>
-                <label for="ingredients">
+                <label class="add-recipe-form__ingredients" for="ingredients">
                     Ingredients <span>*</span>
                 </label>
-                <textarea id="ingredients" v-model="ingredients" rows="4"></textarea>
+                <textarea class="add-recipe-form__ingredients-input" id="ingredients" v-model="ingredients" rows="4"></textarea>
             </div>
 
             <div>
-                <label for="instructions">
+                <label class="add-recipe-form__instructions" for="instructions">
                     Instructions
                 </label>
-                <textarea id="instructions" v-model="instructions" rows="6">
+                <textarea class="add-recipe-form__instructions-input" id="instructions" v-model="instructions" rows="6">
                 </textarea>
             </div>
 
             <div>
                 <label>
-                    <input type="checkbox" v-model="isPublic" />
+                    <input class="add-recipe-form__public" type="checkbox" v-model="isPublic" />
                     Public Recipe
                 </label>
             </div>

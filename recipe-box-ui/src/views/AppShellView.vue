@@ -26,6 +26,7 @@ function handleTabChange(tab: TabKey) {
 </script>
 
 <template>
+    <div class="app-container">
     <TopNav :active-tab="activeTab"
     @change-tab="handleTabChange" />
 
@@ -41,5 +42,5 @@ function handleTabChange(tab: TabKey) {
         <NotificationCenter />
         <BaseModal />
     </section>
-
+    </div>
 </template>

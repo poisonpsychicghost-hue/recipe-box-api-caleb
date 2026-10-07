@@ -81,24 +81,24 @@ function handleCancel() {
         <div class="modal">
             <h2>Register</h2>
             <form @submit="handleRegister">
-                <div>
-                    <label for="reg-username">Username</label>
-                    <input 
+                <div class="reg-modal-username">
+                    <label class="modal__label" for="reg-username">Username</label>
+                    <input class="modal__input"
                         id="reg-username"
                         type="text"
                         v-model="username" />
                 </div>
-                <div>
-                    <label for="reg-email">Email</label>
-                    <input
+                <div class="reg-modal-email">
+                    <label class="modal__label" for="reg-email">Email</label>
+                    <input class="modal__input"
                         id="reg-email"
                         type="email"
                         v-model="email" />
                 </div>
 
-                <div>
-                    <label for="reg-password">Password</label>
-                    <input
+                <div class="reg-modal-password">
+                    <label class="modal__label" for="reg-password">Password</label>
+                    <input class="modal__input"
                         id="reg-password"
                         type="password"
                         v-model="password" />
