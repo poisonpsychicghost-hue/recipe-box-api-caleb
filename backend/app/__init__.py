@@ -7,7 +7,7 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 
 import sqlite3
 from functools import wraps
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, jsonify, request, current_app
 from flask_cors import CORS
 from backend.security import generate_password_hash, check_password_hash
 import os
@@ -15,19 +15,70 @@ from dotenv import load_dotenv
 import jwt
 import datetime
 
+def create_app(config_name):
+    app = Flask(__name__)
+    load_dotenv()
+    app.config["JWT_SECRET"] = os.getenv('JWT_SECRET')
+
+    CORS(
+        app,
+        resources={r"/*": {"origins": "http://127.0.0.1:5173"}},
+        supports_credentials=False
+    )
+
+    app.teardown_appcontext(close_db)
+    #list
+    app.add_url_rule(
+        "/recipes",
+        view_func=require_token(list_recipes),
+        methods=["GET"],
+    )
+    #get
+    app.add_url_rule(
+        "/recipes/<int:recipe_id>",
+        view_func=require_token(get_recipe),
+        methods=["GET"],
+    )
+    #create
+    app.add_url_rule(
+        "/recipes",
+        view_func=require_token(create_recipe),
+        methods=["POST"],
+    )
+    #update
+    app.add_url_rule(
+        "/recipes/<int:recipe_id>",
+        view_func=require_token(update_recipe),
+        methods=["PATCH"],
+    )
+    #delete
+    app.add_url_rule(
+        "/recipes/<int:recipe_id>",
+        view_func=require_token(delete_recipe),
+        methods=["DELETE"],
+    )
+    #register
+    app.add_url_rule(
+        "/users",
+        view_func=create_user,
+        methods=["POST"],
+    )
+    #login
+    app.add_url_rule(
+        "/login",
+        view_func=validate_login,
+        methods=["POST"],
+    )
+    app.add_url_rule(
+        "/",
+        view_func=hello,
+    )
+    return app
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATABASE = os.path.join(BASE_DIR, 'recipes.db')
 
-app = Flask(__name__)
-load_dotenv()
-app.config["JWT_SECRET"] = os.getenv("JWT_SECRET")
-
-CORS(
-    app,
-    resources={r"/*": {"origins": "http://127.0.0.1:5173"}},
-    supports_credentials=False
-)
 
 def get_db():
     if "db" not in g:
@@ -37,7 +88,6 @@ def get_db():
     return g.db
 
 
-@app.teardown_appcontext
 def close_db(exception):
     db = g.pop("db", None)
     if db is not None:
@@ -71,7 +121,7 @@ def require_token(f):
         token = auth_header[len("Bearer "):].strip()
 
         try:
-            claims = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            claims = jwt.decode(token, current_app.config["JWT_SECRET"], algorithms=["HS256"])
             g.user_id = claims.get("sub")
             g.role = claims.get("role")
         except jwt.ExpiredSignatureError:
@@ -83,12 +133,12 @@ def require_token(f):
     return wrapper
 
 
-@app.get("/")
+
 def hello():
     return jsonify({"message": "Recipe Box API", "recipes": "/recipes"})
 
 
-@app.get("/recipes")
+
 @require_token
 def list_recipes():
     db = get_db()
@@ -140,7 +190,7 @@ def list_recipes():
 
     return jsonify(recipes), 200
 
-@app.get("/recipes/<int:recipe_id>")
+
 @require_token
 def get_recipe(recipe_id):
     user_id = g.user_id
@@ -162,7 +212,7 @@ def get_recipe(recipe_id):
     return jsonify(recipe_to_dict(row))
 
 
-@app.post("/recipes")
+
 @require_token
 def create_recipe():
     data = request.get_json(silent=True)
@@ -195,7 +245,7 @@ def create_recipe():
     return jsonify(recipe_to_dict(row)), 201
 
 
-@app.patch("/recipes/<int:recipe_id>")
+
 @require_token
 def update_recipe(recipe_id):
     data = request.get_json(silent=True)
@@ -244,7 +294,7 @@ def update_recipe(recipe_id):
     return jsonify(recipe_to_dict(row))
 
 
-@app.delete("/recipes/<int:recipe_id>")
+
 @require_token
 def delete_recipe(recipe_id):
 
@@ -269,7 +319,7 @@ def delete_recipe(recipe_id):
     return "", 204
 
 
-@app.post("/users")
+
 def create_user():
     if not request.is_json:
         return jsonify({"error": "Bad Request: Request Should Be in JSON"}), 400
@@ -312,7 +362,7 @@ def create_user():
     return jsonify(return_body), 201
 
 
-@app.post("/login")
+
 def validate_login():
     if not request.is_json:
         return {"error": "Bad Request: Request must be JSON"}, 400
@@ -341,7 +391,7 @@ def validate_login():
 
     token = jwt.encode(
         payload,
-        app.config["JWT_SECRET"],
+        current_app.config["JWT_SECRET"],
         algorithm="HS256"
     )
 
