@@ -9,15 +9,24 @@ import sqlite3
 from functools import wraps
 from flask import Flask, g, jsonify, request, current_app
 from flask_cors import CORS
-from backend.security import generate_password_hash, check_password_hash
+from .security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 import jwt
 import datetime
+from .config import Config, DevelopmentConfig, TestingConfig
+
+config_map = {
+    "main": Config,
+    "dev": DevelopmentConfig,
+    "test": TestingConfig
+}
 
 def create_app(config_name):
     app = Flask(__name__)
     load_dotenv()
+    config_class = config_map[config_name]
+    app.config.from_object(config_class)
     app.config["JWT_SECRET"] = os.getenv('JWT_SECRET')
 
     CORS(
