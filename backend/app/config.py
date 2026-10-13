@@ -1,7 +1,22 @@
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BACKEND_DIR / ".env")
 class Config:
     DEBUG = False
-    DATABASE_PATH = "recipes.db"
-    CORS_ORIGIN = 'http://127.0.0.1:5173'
+    CORS_ORIGIN = os.environ.get("CORS_ORIGIN")
+    JWT_SECRET = os.environ.get("JWT_SECRET")
+    DATABASE_PATH = os.environ.get("DATABASE_PATH")
+
+    missing = [name for name, value in [
+    ("JWT_SECRET", JWT_SECRET),
+    ("DATABASE_PATH", DATABASE_PATH),
+    ] if not value]
+
+    if missing:
+        raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
 class DevelopmentConfig(Config):
     DEBUG = True

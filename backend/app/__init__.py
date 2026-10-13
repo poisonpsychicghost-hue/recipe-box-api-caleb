@@ -16,6 +16,8 @@ import jwt
 import datetime
 from .config import Config, DevelopmentConfig, TestingConfig
 
+
+
 config_map = {
     "main": Config,
     "dev": DevelopmentConfig,
@@ -27,13 +29,8 @@ def create_app(config_name):
     load_dotenv()
     config_class = config_map[config_name]
     app.config.from_object(config_class)
-    app.config["JWT_SECRET"] = os.getenv('JWT_SECRET')
 
-    CORS(
-        app,
-        resources={r"/*": {"origins": "http://127.0.0.1:5173"}},
-        supports_credentials=False
-    )
+    app.register_blueprint(auth_bp)
 
     app.teardown_appcontext(close_db)
     #list
@@ -73,15 +70,7 @@ def create_app(config_name):
         methods=["POST"],
     )
     #login
-    app.add_url_rule(
-        "/login",
-        view_func=validate_login,
-        methods=["POST"],
-    )
-    app.add_url_rule(
-        "/",
-        view_func=hello,
-    )
+
     return app
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -96,6 +85,7 @@ def get_db():
         g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
+from .routes.auth import auth_bp
 
 def close_db(exception):
     db = g.pop("db", None)
@@ -371,46 +361,6 @@ def create_user():
     return jsonify(return_body), 201
 
 
-
-def validate_login():
-    if not request.is_json:
-        return {"error": "Bad Request: Request must be JSON"}, 400
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-    if not isinstance(email, str) or not isinstance(password, str):
-        return {"error": "email and password are required"}, 400
-
-    db = get_db()
-    row = db.execute("""
-        SELECT id, username, password_hash, role, email FROM users WHERE email = ?
-    """, (email,)).fetchone()
-
-
-    if row is None or not check_password_hash(row["password_hash"], password):
-        return {"error": "Invalid credentials"}, 401
-
-    payload = {
-        "sub": str(row["id"]),
-        "username": row["username"],
-        "role": row["role"],
-       "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
-       "email": row["email"]
-    }
-
-    token = jwt.encode(
-        payload,
-        current_app.config["JWT_SECRET"],
-        algorithm="HS256"
-    )
-
-    return jsonify({
-        "id": row["id"],
-        "username": row["username"],
-        "role": row["role"],
-        "email": row["email"],
-        "token": token
-    }), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
