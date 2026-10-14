@@ -27,6 +27,9 @@ def create_app(config_name):
     config_class = config_map[config_name]
     app.config.from_object(config_class)
 
+    # Use the config’s DATABASE_PATH as the runtime DATABASE
+    app.config["DATABASE"] = app.config["DATABASE_PATH"]
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(recipes_bp)
 
