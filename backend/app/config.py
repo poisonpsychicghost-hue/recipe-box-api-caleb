@@ -23,8 +23,8 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    DATABASE_PATH = "test_recipes.db"
+    DATABASE_PATH = "backend/test_recipes.db"
 
 class ProductionConfig(Config):
-    DATABASE_PATH = "product_recipes.db"
+    DATABASE_PATH = "backend/product_recipes.db"
     CORS_ORIGIN = "" #fill out at deployment. 

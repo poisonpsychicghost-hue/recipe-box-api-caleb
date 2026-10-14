@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
-from .. import get_db
+from ..tools.databasegetter import get_db
 from ..tools.security import check_password_hash, generate_password_hash
 import datetime, jwt 
+import sqlite3
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/")
 

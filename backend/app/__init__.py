@@ -5,15 +5,10 @@ and it trusts everyone. There is no authentication and no authorization yet.
 That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 """
 
-
-from functools import wraps
-from flask import Flask, g, jsonify
-from flask_cors import CORS
-from .tools.security import generate_password_hash, check_password_hash
+from flask import Flask
 from dotenv import load_dotenv
 from .config import Config, DevelopmentConfig, TestingConfig
-from .tools.databasegetter import get_db, close_db
-
+from .tools.databasegetter import close_db
 
 config_map = {
     "main": Config,
@@ -37,17 +32,5 @@ def create_app(config_name):
 
     return app
 
-
 from .routes.auth import auth_bp
 from .routes.recipes import recipes_bp
-
-
-def hello():
-    return jsonify({"message": "Recipe Box API", "recipes": "/recipes"})
-
-
-
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
