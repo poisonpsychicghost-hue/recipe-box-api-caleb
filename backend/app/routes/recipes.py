@@ -5,79 +5,28 @@ from ..tools.todict import recipe_to_dict
 from ..tools.databasegetter import get_db
 import sqlite3
 from ..tools.models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id
-from ..tools.recipe_services import create_recipe_service, delete_recipe_service
+from ..tools.recipe_services import create_recipe_service, delete_recipe_service, list_recipes_service, get_recipes_service, update_recipe_service, list_my_recipes_service
 
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/")
 
 def list_recipes():
-    db = get_db()
     user_id = g.user_id
     role = g.role
-
-    base_query = """
-        SELECT
-            r.id,
-            r.title,
-            r.ingredients,
-            r.instructions,
-            r.is_public,
-            r.owner_id,
-            u.username AS owner_username
-        FROM recipes AS r
-        JOIN users AS u ON r.owner_id = u.id
-    """
-
-    params = ()
-    where_clauses = []
-
-    if role == "admin":
-        # admin sees everything
-        query = base_query
-    elif role == "guest":
-        # guest: only public recipes
-        where_clauses.append("r.is_public = 1")
-        query = base_query + " WHERE " + " AND ".join(where_clauses)
-    else:
-        # regular user: public recipes OR their own (even if private)
-        where_clauses.append("(r.is_public = 1 OR r.owner_id = ?)")
-        params = (user_id,)
-        query = base_query + " WHERE " + " AND ".join(where_clauses)
-
-    rows = db.execute(query, params).fetchall()
-
-    recipes = []
-    for row in rows:
-        recipes.append({
-            "id": row["id"],
-            "title": row["title"],
-            "ingredients": row["ingredients"],
-            "instructions": row["instructions"],
-            "is_public": bool(row["is_public"]),
-            "owner_id": row["owner_id"],
-            "owner_username": row["owner_username"],
-        })
-
+    recipes = list_recipes_service(role, user_id)
     return jsonify(recipes), 200
 
 
 def get_recipe(recipe_id):
     user_id = g.user_id
     role = g.role
-    db = get_db()
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-    ).fetchone()
-    if row is None:
+    try:
+        recipe = get_recipes_service(role, user_id, recipe_id)
+    except LookupError:
         return jsonify({"error": "recipe not found"}), 404
-    if role == "guest" and row["is_public"] == 0:
+    except PermissionError:
         return jsonify({"error": "Forbidden"}), 403
-    if role == "admin":
-        return jsonify(recipe_to_dict(row))
-    if row["is_public"] == 0 and str(user_id) != str(row["owner_id"]):
-        return jsonify({"error": "Forbidden"}), 403
-   
-      
-    return jsonify(recipe_to_dict(row))
+
+    return jsonify(recipe), 200
 
 
 def create_recipe():
@@ -114,44 +63,17 @@ def update_recipe(recipe_id):
     
     user_id = g.user_id
     role = g.role
-    if role == "guest":
-        return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
-    db = get_db()
-    recipe = db.execute(
-            "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-        ).fetchone()
-    if recipe is None:
-            return jsonify({"error": "Recipe Not Found"}), 404
-    is_owner = str(recipe["owner_id"]) == str(user_id)
-    is_admin = role == "admin"
-    if not (is_owner or is_admin):
-        return jsonify({"error": "Forbidden"}), 403
-
-    
-    fields, values = [], []
-    for column in ("title", "ingredients", "instructions"):
-        if column in data:
-            fields.append(f"{column} = ?")
-            values.append(data[column])
-    if "is_public" in data:
-        fields.append("is_public = ?")
-        values.append(1 if data["is_public"] else 0)
-    if not fields:
-        return jsonify({"error": "nothing to update"}), 400
-    values.append(recipe_id)
     try:
-        cur = db.execute(
-            f"UPDATE recipes SET {', '.join(fields)} WHERE id = ?", values
-        )
-        db.commit()
+        recipe = update_recipe_service(role, user_id, recipe_id, data)
+    except PermissionError:
+        return jsonify({"error": "Forbidden"}), 403
+    except LookupError:
+        return jsonify({"error": "Recipe Not Found"}), 404
+    except Exception:
+        return jsonify({"error": "nothing to update"}), 400
     except sqlite3.IntegrityError:
         return jsonify({"error": "a recipe with that title already exists"}), 409
-    if cur.rowcount == 0:
-        return jsonify({"error": "recipe not found"}), 404
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-    ).fetchone()
-    return jsonify(recipe_to_dict(row))
+    return jsonify(recipe_to_dict(recipe))
 
 
 def delete_recipe(recipe_id):
@@ -170,6 +92,16 @@ def delete_recipe(recipe_id):
         return jsonify({"error": "recipe not found"}), 404
     return "", 204
 
+def list_my_recipes():
+    user_id = g.user_id
+    role = g.role
+    try:
+        recipes = list_my_recipes_service(role, user_id)
+    except PermissionError:
+        return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
+    except LookupError:
+        return jsonify({"error": "No Recipes Found."}), 404
+    return jsonify(recipes), 200
 
 recipes_bp.add_url_rule(
     "/recipes",
@@ -203,4 +135,10 @@ recipes_bp.add_url_rule(
     "/recipes/<int:recipe_id>",
     view_func=require_token(delete_recipe),
     methods=["DELETE"],
+)
+
+recipes_bp.add_url_rule(
+    "/recipes/mine",
+    view_func=require_token(list_my_recipes),
+    methods=["GET"],
 )
