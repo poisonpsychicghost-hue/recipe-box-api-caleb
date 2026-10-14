@@ -4,7 +4,8 @@ from ..tools.require import require_token
 from ..tools.todict import recipe_to_dict
 from ..tools.databasegetter import get_db
 import sqlite3
-
+from ..tools.models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id
+from ..tools.recipe_services import create_recipe_service, delete_recipe_service
 
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/")
 
@@ -79,38 +80,32 @@ def get_recipe(recipe_id):
     return jsonify(recipe_to_dict(row))
 
 
-
 def create_recipe():
+    # 1. HTTP translation + validation (exactly as you have)
     data = request.get_json(silent=True)
     if not data or not data.get("title") or not data.get("ingredients"):
         return jsonify({"error": "title and ingredients are required"}), 400
 
     user_id = g.user_id
     role = g.role
-    if role == "guest":
-        return jsonify({"error": "Guests Allowed Read-Only Access"})
-    db = get_db()
+    # 2. Business rule: default/public flag still lives here for now
+    is_public = 1 if data.get("is_public", True) else 0
+
+    # 3. Data access delegated
+    title = data["title"]
+    ingredients = data["ingredients"]
+    instructions = data.get("instructions", "")
+    owner_id = user_id
     try:
-        cur = db.execute(
-            "INSERT INTO recipes (title, ingredients, instructions, is_public, owner_id)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (
-                data["title"],
-                data["ingredients"],
-                data.get("instructions", ""),
-                1 if data.get("is_public", True) else 0,
-                user_id,
-            ),
-        )
-        db.commit()
+        recipe_dict = create_recipe_service(role, title, ingredients, instructions, is_public, owner_id)
+    except PermissionError:
+        return jsonify({"error": "Guests Allowed Read-Only Access"})
     except sqlite3.IntegrityError:
+        # SAME behavior you already had
         return jsonify({"error": "a recipe with that title already exists"}), 409
-    row = db.execute(
-        "SELECT * FROM recipes WHERE id = ?", (cur.lastrowid,)
-    ).fetchone()
-    return jsonify(recipe_to_dict(row)), 201
 
-
+    # 4. Domain mapping + HTTP response (unchanged)
+    return jsonify(recipe_dict), 201
 
 def update_recipe(recipe_id):
     data = request.get_json(silent=True)
@@ -159,26 +154,19 @@ def update_recipe(recipe_id):
     return jsonify(recipe_to_dict(row))
 
 
-
 def delete_recipe(recipe_id):
 
     user_id = g.user_id
     role = g.role
-    db = get_db()
-    if role == "guest":
+    try:
+        rowcount = delete_recipe_service(role, user_id, recipe_id)
+    except PermissionError:
         return jsonify({"error": "Guests Allowed Read-Only Access"}), 403
-    recipe = db.execute(
-        "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-        ).fetchone()
-    if recipe is None:
+    except LookupError:
         return jsonify({"error": "Recipe Not Found"}), 404
-    is_owner = str(recipe["owner_id"]) == str(user_id)
-    is_admin = role == "admin"
-    if not (is_owner or is_admin):
+    except AssertionError:
         return jsonify({"error": "Forbidden"}), 403
-    cur = db.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
-    db.commit()
-    if cur.rowcount == 0:
+    if rowcount == 0:
         return jsonify({"error": "recipe not found"}), 404
     return "", 204
 
@@ -189,23 +177,27 @@ recipes_bp.add_url_rule(
     methods=["GET"],
 )
 
+
 recipes_bp.add_url_rule(
     "/recipes/<int:recipe_id>",
     view_func=require_token(get_recipe),
     methods=["GET"],
 )
 
+
 recipes_bp.add_url_rule(
-    "/recipes/<int:recipe_id>",
+    "/recipes",
     view_func=require_token(create_recipe),
     methods=["POST"],
 )
+
 
 recipes_bp.add_url_rule(
     "/recipes/<int:recipe_id>",
     view_func=require_token(update_recipe),
     methods=["PATCH"],
 )
+
 
 recipes_bp.add_url_rule(
     "/recipes/<int:recipe_id>",
