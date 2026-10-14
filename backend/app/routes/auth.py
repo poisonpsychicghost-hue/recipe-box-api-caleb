@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from .. import get_db
-from ..security import check_password_hash, generate_password_hash
+from ..tools.security import check_password_hash, generate_password_hash
 import datetime, jwt 
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/")
@@ -85,9 +85,6 @@ def create_user():
     return_body = {"message": "User Creation Successful", "username": username, "email": email, "id": user_id}
 
     return jsonify(return_body), 201
-
-
-
 
 
 auth_bp.add_url_rule(

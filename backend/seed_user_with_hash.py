@@ -1,5 +1,5 @@
 import sqlite3
-from backend.app.security import hash_password, verify_password
+from backend.app.tools.security import hash_password, verify_password
 
 DB_PATH = "recipes.db"
 
