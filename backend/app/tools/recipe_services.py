@@ -1,4 +1,4 @@
-from .models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id, list_recipes_model, update_recipe_row, list_recipes_for_owner_model, get_recipe_object_by_id
+from .models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id, list_recipes_model_orm, update_recipe_row, list_recipes_for_owner_model, get_recipe_object_by_id
 from .todict import recipe_to_dict
 
 def create_recipe_service(role, title, ingredients, instructions, is_public, owner_id):
@@ -27,7 +27,7 @@ def delete_recipe_service(role, user_id, recipe_id):
     return rowcount
 
 def list_recipes_service(role, user_id):
-    rows = list_recipes_model()
+    rows = list_recipes_model_orm()
     recipes = []
     for row in rows:
         recipe = recipe_to_dict(row)

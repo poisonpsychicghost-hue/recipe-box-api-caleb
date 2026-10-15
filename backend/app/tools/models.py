@@ -55,6 +55,9 @@ def list_recipes_model():
     ).fetchall()
     return recipes
 
+def list_recipes_model_orm():
+    query = Recipe.query
+    return query.all()
 
 def update_recipe_row(recipe_id, fields, values):
     db = get_db()
