@@ -9,6 +9,7 @@ from flask import Flask
 from dotenv import load_dotenv
 from .config import Config, DevelopmentConfig, TestingConfig
 from .tools.databasegetter import close_db
+from .extensions import db
 
 config_map = {
     "main": Config,
@@ -20,17 +21,22 @@ def create_app(config_name):
     app = Flask(__name__)
     load_dotenv()
     config_class = config_map[config_name]
-    app.config.from_object(config_class)
+    config_obj = config_class()
+    app.config.from_object(config_obj)
 
     # Use the config’s DATABASE_PATH as the runtime DATABASE
     app.config["DATABASE"] = app.config["DATABASE_PATH"]
-
+    app.config["SQLALCHEMY_DATATBASE_URI"] = config_obj.SQLALCHEMY_DATABASE_URI
+    db.init_app(app)
     app.register_blueprint(auth_bp)
     app.register_blueprint(recipes_bp)
 
     app.teardown_appcontext(close_db)
 
     return app
+def create_app_dev():
+    # or "main" if that's your usual config name
+    return create_app("dev")
 
 from .routes.auth import auth_bp
 from .routes.recipes import recipes_bp

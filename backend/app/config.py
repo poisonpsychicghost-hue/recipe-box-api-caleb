@@ -4,22 +4,28 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BACKEND_DIR / ".env")
+
 class Config:
     DEBUG = False
     CORS_ORIGIN = os.environ.get("CORS_ORIGIN")
     JWT_SECRET = os.environ.get("JWT_SECRET")
     DATABASE_PATH = os.environ.get("DATABASE_PATH")
 
-    missing = [name for name, value in [
-    ("JWT_SECRET", JWT_SECRET),
-    ("DATABASE_PATH", DATABASE_PATH),
-    ] if not value]
+    @property
+    def ABSOLUTE_DATABASE_PATH(self):
+        # If env var is relative, join it to BACKEND_DIR
+        db_path = Path(self.DATABASE_PATH)
+        if not db_path.is_absolute():
+            db_path = BACKEND_DIR / db_path
+        return str(db_path)
 
-    if missing:
-        raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
-
+    @property
+    def SQLALCHEMY_DATABASE_URI(self):
+        return f"sqlite:///{self.ABSOLUTE_DATABASE_PATH}"
+    
 class DevelopmentConfig(Config):
     DEBUG = True
+    DATABASE_PATH = "recipes.db"
 
 class TestingConfig(Config):
     TESTING = True
