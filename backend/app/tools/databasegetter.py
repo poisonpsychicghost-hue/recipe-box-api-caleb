@@ -8,7 +8,8 @@ from flask import g, current_app
 
 def get_db():
     if "db" not in g:
-        db_path = current_app.config["DATABASE_PATH"]
+        # use the same absolute path as SQLAlchemy
+        db_path = current_app.config["ABSOLUTE_DATABASE_PATH"]
         print("CONNECTING TO DB:", repr(db_path))
         g.db = sqlite3.connect(db_path)
         g.db.row_factory = sqlite3.Row

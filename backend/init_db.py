@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS users (
 """
 
 USERS_SEED = [
-    ("guest", "guest@email.ext", "<hash_for_password1>", "guest"),
-    ("dev", "thomas.barnard@students.maestrocollege.edu", "<hash_for_dev123>", "admin"),
-    ("carlos", "carlos@email.ext", "<hash_for_password2>", "user"),
+    ("guest", "guest@email.ext", "scrypt:32768:8:1$grkkZZCov9U8Rqwv$871fde769eeb05128135767d0a99e2df49e9589296df9be9cd361c6b2e14c70a188e6c411a1a8393c5acca59f0ef6acd00266a62e91d2d2900fcd24fa5f6c4fb", "guest"),
+    ("dev", "thomas.barnard@students.maestrocollege.edu", "scrypt:32768:8:1$kjKnCjY78EFmAlRI$4a2aff29eddf10aaf93cf6c3d67cfce3d9a805a929084426c06d3aa273e72d429b5e19d10947fe60fd3b6069c2bf185266dafd27ad5c5ba0dfa8a0bbee52d220", "admin"),
+    ("carlos", "carlos@email.ext", "scrypt:32768:8:1$iinLYN0Vhw9vwHgV$3ede7f5b22b7deacedecb67fc3d91d229649cdc540029576b241f09caed49ec5fb7f771a9010385d4bfc8be664c4c5b58b2bff2c93ea7a7717a7a40fe384e935", "user"),
 ]
 
 def init_db(db_path: str, *, seed: bool = True) -> None:

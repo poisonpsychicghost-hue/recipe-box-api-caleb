@@ -30,6 +30,9 @@ def create_app(config_name):
     db.init_app(app)
     app.register_blueprint(auth_bp)
     app.register_blueprint(recipes_bp)
+    print("DEBUG DATABASE_PATH:", repr(app.config.get("DATABASE_PATH")))
+    print("DEBUG ABSOLUTE_DATABASE_PATH:", repr(app.config.get("ABSOLUTE_DATABASE_PATH", None)))
+    print("DEBUG ORM URI:", repr(app.config.get("SQLALCHEMY_DATABASE_URI")))
 
     app.teardown_appcontext(close_db)
 
