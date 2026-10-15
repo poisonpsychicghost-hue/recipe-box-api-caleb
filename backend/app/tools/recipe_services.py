@@ -1,4 +1,4 @@
-from .models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id, list_recipes_model, update_recipe_row, list_recipes_for_owner_model
+from .models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id, list_recipes_model, update_recipe_row, list_recipes_for_owner_model, get_recipe_object_by_id
 from .todict import recipe_to_dict
 
 def create_recipe_service(role, title, ingredients, instructions, is_public, owner_id):
@@ -38,13 +38,13 @@ def list_recipes_service(role, user_id):
     return recipes
 
 def get_recipes_service(role, user_id, recipe_id):
-    row = get_recipe_row_by_id(recipe_id)
+    row = get_recipe_object_by_id(recipe_id)
     if row is None:
         raise LookupError
     is_guest = role == 'guest'
     is_admin = role == 'admin'
-    is_owner = str(row["owner_id"]) == str(user_id)
-    is_public = bool(row["is_public"])
+    is_owner = str(row.owner_id) == str(user_id)
+    is_public = bool(row.is_public)
 
     if is_guest and not is_public:
         raise PermissionError
@@ -80,7 +80,6 @@ def update_recipe_service(role, user_id, recipe_id, data):
         raise LookupError
     row = get_recipe_row_by_id(recipe_id)
     return recipe_to_dict(row)
-
 
 def list_my_recipes_service(role, user_id):
     if role == "guest":

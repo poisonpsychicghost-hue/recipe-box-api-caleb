@@ -1,6 +1,8 @@
 from .databasegetter import get_db
 import sqlite3
-from flask import jsonify, g
+from flask import jsonify, g, session
+from .alch_models import Recipe
+from sqlalchemy import select
 
 def create_recipe_model(title, ingredients, instructions, is_public, owner_id):
     db = get_db()
@@ -23,6 +25,10 @@ def get_recipe_row_by_id(recipe_id):
     if recipe is None:
         return None
     return recipe
+
+def get_recipe_object_by_id(recipe_id):
+    return Recipe.query.get(recipe_id)
+
 
 def delete_recipe_row_by_id(recipe_id):
     db = get_db()
