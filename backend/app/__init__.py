@@ -8,7 +8,6 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 from flask import Flask
 from dotenv import load_dotenv
 from .config import Config, DevelopmentConfig, TestingConfig
-from .tools.databasegetter import close_db
 from .extensions import db
 
 config_map = {
@@ -34,7 +33,6 @@ def create_app(config_name):
     print("DEBUG ABSOLUTE_DATABASE_PATH:", repr(app.config.get("ABSOLUTE_DATABASE_PATH", None)))
     print("DEBUG ORM URI:", repr(app.config.get("SQLALCHEMY_DATABASE_URI")))
 
-    app.teardown_appcontext(close_db)
 
     return app
 def create_app_dev():
