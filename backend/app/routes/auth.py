@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app
-from ..tools.databasegetter import get_db
 from ..tools.security import check_password_hash, generate_password_hash
 import datetime, jwt 
-import sqlite3
+from ..extensions import db
+from ..tools.alch_models import User
+from sqlalchemy.exc import  IntegrityError
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/")
 
@@ -15,21 +16,16 @@ def validate_login():
     if not isinstance(email, str) or not isinstance(password, str):
         return {"error": "email and password are required"}, 400
 
-    db = get_db()
-    row = db.execute("""
-        SELECT id, username, password_hash, role, email FROM users WHERE email = ?
-    """, (email,)).fetchone()
-
-
-    if row is None or not check_password_hash(row["password_hash"], password):
+    user = User.query.filter_by(email=email).first()
+    if user is None or not check_password_hash(user.password_hash, password):
         return {"error": "Invalid credentials"}, 401
 
     payload = {
-        "sub": str(row["id"]),
-        "username": row["username"],
-        "role": row["role"],
+        "sub": str(user.id),
+        "username": user.username,
+        "role": user.role,
        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2),
-       "email": row["email"]
+       "email": user.email
     }
 
     token = jwt.encode(
@@ -39,10 +35,10 @@ def validate_login():
     )
 
     return jsonify({
-        "id": row["id"],
-        "username": row["username"],
-        "role": row["role"],
-        "email": row["email"],
+        "id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "email": user.email,
         "token": token
     }), 200
 
@@ -66,24 +62,19 @@ def create_user():
 
     password_hash = generate_password_hash(password)
 
-    db = get_db()
+    user = User(username=username, email=email, password_hash=password_hash)
+    db.session.add(user)
     try:
-        cur = db.execute(
-            """
-            INSERT INTO users (username, email, password_hash)
-            VALUES (?, ?, ?)
-            """, (username, email, password_hash))
-        db.commit()
-    except sqlite3.IntegrityError as e:
+        db.session.commit()
+    except IntegrityError as e:
         msg = str(e)
         if "users.username" in msg:
             return jsonify({"error": "username already taken"}), 409
         if "users.email" in msg:
             return jsonify({"error": "email already taken"}), 409
         return jsonify({"error": "account conflict"}), 409
-
-    user_id = cur.lastrowid
-    return_body = {"message": "User Creation Successful", "username": username, "email": email, "id": user_id}
+    
+    return_body = {"message": "User Creation Successful", "username": user.username, "email": user.email, "id": user.id}
 
     return jsonify(return_body), 201
 
