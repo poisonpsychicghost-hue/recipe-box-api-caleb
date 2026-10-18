@@ -1,11 +1,8 @@
 from flask import Blueprint, jsonify, request, g
-from ..tools.security import check_password_hash
 from ..tools.require import require_token
 from ..tools.todict import recipe_to_dict
-from ..tools.databasegetter import get_db
-import sqlite3
-from ..tools.models import create_recipe_model, get_recipe_row_by_id, delete_recipe_row_by_id
 from ..tools.recipe_services import create_recipe_service, delete_recipe_service, list_recipes_service, get_recipes_service, update_recipe_service, list_my_recipes_service
+from sqlalchemy.exc import IntegrityError
 
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/")
 
@@ -49,7 +46,7 @@ def create_recipe():
         recipe_dict = create_recipe_service(role, title, ingredients, instructions, is_public, owner_id)
     except PermissionError:
         return jsonify({"error": "Guests Allowed Read-Only Access"})
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         # SAME behavior you already had
         return jsonify({"error": "a recipe with that title already exists"}), 409
 
@@ -71,7 +68,7 @@ def update_recipe(recipe_id):
         return jsonify({"error": "Recipe Not Found"}), 404
     except Exception:
         return jsonify({"error": "nothing to update"}), 400
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return jsonify({"error": "a recipe with that title already exists"}), 409
     return jsonify(recipe_to_dict(recipe))
 
