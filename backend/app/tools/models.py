@@ -3,8 +3,8 @@ from .alch_models import Recipe
 from sqlalchemy import select
 from ..extensions import db
 
-def create_recipe_model_orm(title, ingredients, instructions, is_public, owner_id):
-    recipe = Recipe(title=title, ingredients=ingredients, instructions=instructions, is_public=is_public, owner_id=owner_id)
+def create_recipe_model_orm(title, ingredients, instructions, is_public, owner):
+    recipe = Recipe(title=title, ingredients=ingredients, instructions=instructions, is_public=is_public, owner=owner)
     db.session.add(recipe)
     db.session.commit()
     return recipe
@@ -45,3 +45,4 @@ def update_recipe_model_orm(recipe_id, data):
 def list_recipes_for_owner_orm_model(owner_id):
     recipes = Recipe.query.filter_by(owner_id=owner_id).all()
     return recipes
+

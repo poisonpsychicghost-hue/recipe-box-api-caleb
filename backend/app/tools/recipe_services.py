@@ -1,12 +1,17 @@
-from .models import create_recipe_model_orm, get_recipe_row_by_id, delete_recipe_row_by_id, list_recipes_model_orm, update_recipe_row, list_recipes_for_owner_orm_model, get_recipe_object_by_id, update_recipe_model_orm, delete_recipe_object_by_id
+from .models import create_recipe_model_orm, list_recipes_model_orm, list_recipes_for_owner_orm_model, get_recipe_object_by_id, update_recipe_model_orm, delete_recipe_object_by_id
 from .todict import recipe_to_dict
+from .alch_models import User
+
 
 def create_recipe_service(role, title, ingredients, instructions, is_public, owner_id):
     if role == "guest":
          raise PermissionError
-    else:
-        recipe_dict = recipe_to_dict(create_recipe_model_orm(title, ingredients, instructions, is_public, owner_id))
-        return recipe_dict
+
+    owner = User.query.get(owner_id)
+    if owner is None:
+        raise LookupError
+    recipe_dict = recipe_to_dict(create_recipe_model_orm(title, ingredients, instructions, is_public, owner))
+    return recipe_dict
 
 def delete_recipe_service(role, user_id, recipe_id):
     if role == "guest":
@@ -39,7 +44,7 @@ def get_recipes_service(role, user_id, recipe_id):
         raise LookupError
     is_guest = role == 'guest'
     is_admin = role == 'admin'
-    is_owner = str(row.owner_id) == str(user_id)
+    is_owner = str(row.owner.id) == str(user_id)
     is_public = bool(row.is_public)
 
     if is_guest and not is_public:
