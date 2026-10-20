@@ -3,8 +3,11 @@ from ..tools.require import require_token
 from ..tools.todict import recipe_to_dict
 from ..tools.recipe_services import create_recipe_service, delete_recipe_service, list_recipes_service, get_recipes_service, update_recipe_service, list_my_recipes_service
 from sqlalchemy.exc import IntegrityError
+from ..extensions import cache
 
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/")
+
+
 
 def list_recipes():
     user_id = g.user_id
@@ -89,6 +92,7 @@ def delete_recipe(recipe_id):
         return jsonify({"error": "recipe not found"}), 404
     return "", 204
 
+@cache.cached(timeout=30)
 def list_my_recipes():
     user_id = g.user_id
     role = g.role
