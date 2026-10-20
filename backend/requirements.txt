@@ -1,3 +1,6 @@
 flask
 python-dotenv==1.2.4
 Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.1.0 
+Mako==1.4.3 
+alembic==1.20.0
