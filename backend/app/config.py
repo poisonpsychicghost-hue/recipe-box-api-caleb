@@ -10,6 +10,8 @@ class Config:
     CORS_ORIGIN = os.environ.get("CORS_ORIGIN")
     JWT_SECRET = os.environ.get("JWT_SECRET")
     DATABASE_PATH = os.environ.get("DATABASE_PATH")
+    CACHE_TYPE = "SimpleCache"
+    CACHE_DEFAULT_TIMEOUT = 30
 
     @property
     def ABSOLUTE_DATABASE_PATH(self):
