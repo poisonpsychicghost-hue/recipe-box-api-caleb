@@ -25,7 +25,7 @@ class Config:
     
 class DevelopmentConfig(Config):
     DEBUG = True
-    DATABASE_PATH = "recipes.db"
+    DATABASE_PATH = "dev_rebuild.db"
 
 class TestingConfig(Config):
     TESTING = True
