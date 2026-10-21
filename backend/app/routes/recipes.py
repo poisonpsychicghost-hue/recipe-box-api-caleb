@@ -7,7 +7,11 @@ from ..extensions import cache
 
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/")
 
-
+def recipes_mine_cache_key():
+    user_id = f"user:{str(g.user_id)}"
+    path = "recipes_mine:"
+    key = user_id + path
+    return key
 
 def list_recipes():
     user_id = g.user_id
@@ -52,7 +56,8 @@ def create_recipe():
     except IntegrityError:
         # SAME behavior you already had
         return jsonify({"error": "a recipe with that title already exists"}), 409
-
+    string_key = recipes_mine_cache_key()
+    cache.delete(string_key)
     # 4. Domain mapping + HTTP response (unchanged)
     return jsonify(recipe_dict), 201
 
@@ -92,7 +97,7 @@ def delete_recipe(recipe_id):
         return jsonify({"error": "recipe not found"}), 404
     return "", 204
 
-@cache.cached(timeout=30)
+@cache.cached(timeout=30, key_prefix=recipes_mine_cache_key)
 def list_my_recipes():
     user_id = g.user_id
     role = g.role

@@ -4,5 +4,11 @@ Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.1.0 
 Mako==1.4.3 
 alembic==1.20.0
-Flask-Caching=2.5.1 
-cachelib=0.17.0
+Flask-Caching==2.5.1 
+cachelib==0.17.0
+deprecated==3.0.0 
+flask-limiter==4.1.1 
+limits==5.8.0 
+ordered-set==4.1.0 
+packaging==26.3 
+wrapt==2.5.1
