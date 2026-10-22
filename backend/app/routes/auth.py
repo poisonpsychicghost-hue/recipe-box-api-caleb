@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify, current_app
 from ..tools.security import check_password_hash, generate_password_hash
 import datetime, jwt 
-from ..extensions import db
+from ..extensions import db, limiter
 from ..tools.alch_models import User
 from sqlalchemy.exc import  IntegrityError
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/")
 
+@limiter.limit("3 per 5 minutes")
 def validate_login():
     if not request.is_json:
         return {"error": "Bad Request: Request must be JSON"}, 400
@@ -42,6 +43,7 @@ def validate_login():
         "token": token
     }), 200
 
+@limiter.limit("2 per 2 hours")
 def create_user():
     if not request.is_json:
         return jsonify({"error": "Bad Request: Request Should Be in JSON"}), 400
