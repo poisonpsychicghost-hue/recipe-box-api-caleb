@@ -1,4 +1,4 @@
-from .models import create_recipe_model_orm, list_recipes_model_orm, list_recipes_for_owner_orm_model, get_recipe_object_by_id, update_recipe_model_orm, delete_recipe_object_by_id
+from .models import create_recipe_model_orm, list_recipes_model_orm, list_recipes_for_owner_orm_model, get_recipe_object_by_id, update_recipe_model_orm, delete_recipe_object_by_id, create_recipe_comment_main
 from .todict import recipe_to_dict
 from .alch_models import User
 
@@ -82,4 +82,18 @@ def list_my_recipes_service(role, user_id):
         recipe = recipe_to_dict(row)
         recipes.append(recipe)
     return recipes
+
+def create_recipe_comment_service(role, recipe_id, comment_text, user_id):
+    if role == "guest":
+        raise PermissionError
+    recipe = get_recipe_object_by_id(recipe_id)
     
+    if recipe is None:
+        raise LookupError
+    owner_id = recipe.owner_id
+    if recipe.is_public == False and owner_id != user_id:
+        raise LookupError
+    comment = create_recipe_comment_main(recipe_id, comment_text, user_id)
+    return comment
+
+

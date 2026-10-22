@@ -1,5 +1,5 @@
 from flask import jsonify, g, session
-from .alch_models import Recipe
+from .alch_models import Recipe, Comment
 from sqlalchemy import select
 from ..extensions import db
 
@@ -46,3 +46,8 @@ def list_recipes_for_owner_orm_model(owner_id):
     recipes = Recipe.query.filter_by(owner_id=owner_id).all()
     return recipes
 
+def create_recipe_comment_main(recipe_id, comment_text, poster_id):
+    comment = Comment(recipe_id=recipe_id, comment_text=comment_text, poster_id=poster_id)
+    db.session.add(comment)
+    db.session.commit()
+    return comment

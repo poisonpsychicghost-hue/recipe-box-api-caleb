@@ -1,11 +1,19 @@
 from flask import Blueprint, jsonify, request, g
 from ..tools.require import require_token
 from ..tools.todict import recipe_to_dict
-from ..tools.recipe_services import create_recipe_service, delete_recipe_service, list_recipes_service, get_recipes_service, update_recipe_service, list_my_recipes_service
+from ..tools.recipe_services import create_recipe_service, delete_recipe_service, list_recipes_service, get_recipes_service, update_recipe_service, list_my_recipes_service, create_recipe_comment_service
 from sqlalchemy.exc import IntegrityError
-from ..extensions import cache
+from ..extensions import cache, limiter
 
 recipes_bp = Blueprint("recipes", __name__, url_prefix="/")
+
+def serialize_comment(comment):
+    return {
+        "id": comment.id,
+        "comment_text": comment.comment_text,
+        "recipe_id": comment.recipe_id,
+        "poster_id": comment.poster_id
+    }
 
 def recipes_mine_cache_key():
     user_id = f"user:{str(g.user_id)}"
@@ -109,6 +117,25 @@ def list_my_recipes():
         return jsonify({"error": "No Recipes Found."}), 404
     return jsonify(recipes), 200
 
+@limiter.limit("3 per 30 minutes")
+def create_recipe_comment(recipe_id):
+    if not request.is_json:
+        return jsonify({"Bad Request": "Request Must Be JSON"}), 400
+    data = request.get_json()
+    if not data or not data.get("comment_text"):
+        return jsonify({"Bad Request": "comment_text Required"}), 400
+    user_id = g.user_id
+    role = g.role
+    comment_text = data.get("comment_text")
+    try:
+        comment = create_recipe_comment_service(role, recipe_id, comment_text, user_id) 
+    except PermissionError:
+        return jsonify({"error": "Guests Not Allowed to Comment"}), 403
+    except LookupError:
+        return jsonify({"error": "No recipe found."}), 404
+    return jsonify(serialize_comment(comment)), 201
+
+
 recipes_bp.add_url_rule(
     "/recipes",
     view_func=require_token(list_recipes),
@@ -147,4 +174,11 @@ recipes_bp.add_url_rule(
     "/recipes/mine",
     view_func=require_token(list_my_recipes),
     methods=["GET"],
+)
+
+recipes_bp.add_url_rule(
+    "recipes/<int:recipe_id>/comments", 
+    view_func=require_token(create_recipe_comment),
+    methods=["POST"]
+
 )
