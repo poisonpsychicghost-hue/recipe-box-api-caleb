@@ -8,7 +8,7 @@ That is the point: you will add both, lesson by lesson, in Units 2 and 3.
 from flask import Flask
 from dotenv import load_dotenv
 from .config import Config, DevelopmentConfig, TestingConfig
-from .extensions import db, migrate, cache
+from .extensions import db, migrate, cache, limiter
 
 config_map = {
     "main": Config,
@@ -28,6 +28,7 @@ def create_app(config_name):
     db.init_app(app)
     migrate.init_app(app, db)
     cache.init_app(app)
+    limiter.init_app(app)
     app.register_blueprint(auth_bp)
     app.register_blueprint(recipes_bp)
     print("DEBUG DATABASE_PATH:", repr(app.config.get("DATABASE_PATH")))
